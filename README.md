@@ -9,7 +9,7 @@ Minimal Flask app for managing MongoDB
 3. `python __init__.py`
 4. Go to `http://localhost:5000/admin` on your browser
 
-## Setup
+## Optional Setup
 
 Edit config.py to change configuration. The following can currently be edited:
 
