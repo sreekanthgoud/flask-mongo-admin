@@ -1,2 +1,12 @@
+		<script type="text/javascript">
+			function showMsg(status, text){
+				$('#noti').remove();
+				var noti = "<div id=\"noti\" class=\"notification is-"+status+"\" style=\"max-width:300px; position:fixed; z-index:9999; top:16px; right:16px;\"> <button class=\"delete\" onclick=\"$('#noti').remove()\"></button> "+text+"</div>";
+
+				document.getElementsByTagName('body')[0].innerHTML = noti + document.getElementsByTagName('body')[0].innerHTML;
+			}
+			
+		</script>
+
 	</body>
 </html>

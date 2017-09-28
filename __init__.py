@@ -1,9 +1,14 @@
-from flask import Flask, render_template, url_for, request
+from flask import Flask, render_template, url_for, request, Blueprint
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 import json
+import config
 
-app = Flask(__name__, static_url_path='')
+if config.app['blueprint']:
+	app = Blueprint(config.root_route, __name__)
+else:
+	app = Flask(__name__, static_url_path='')
+
 client = MongoClient()
 
 
@@ -45,6 +50,8 @@ def shorten(s, subs):
 def msg(status, response):
 	return '{ "status": "'+status+'", "response": "'+response+'" }'
 
+def response_msg(status, response):
+	return '{ "status": "'+status+'", "response": '+response+' }'
 
 
 
@@ -52,22 +59,51 @@ def msg(status, response):
 
 
 
-@app.route('/admin/api/update/<database>/<collection>/<document>', methods=['POST'])
+
+@app.route('/'+config.root_route+'/api/update/<database>/<collection>/<document>', methods=['POST'])
 def update(database, collection, document):
 	if request.method == 'POST':
-		content = json.loads(request.form['content'])
-		if content is not None:
-			client[database][collection].update({'_id': ObjectId(document)}, {'$set': content}, upsert=False)
-			return msg('success', 'Success! Document has been updated.')
-		return msg('error', 'A strange error occured. Is this JSON valid?')
+		try:
+			content = json.loads(request.form['content'])
+			if content is not None:
+				client[database][collection].update({'_id': ObjectId(document)}, {'$set': content}, upsert=False)
+				return msg('success', 'Success! Document has been updated.')
+		except:
+			return msg('error', 'Failed to update document. Is this JSON valid?')
 
 
 
-@app.route('/admin/api/delete/<database>/<collection>/<document>', methods=['POST'])
+@app.route('/'+config.root_route+'/api/delete/<database>/<collection>/<document>', methods=['POST'])
 def delete(database, collection, document):
 	if request.method == 'POST':
-		client[database][collection].remove({'_id': ObjectId(document)})
-		return msg('success', 'delete successful')
+		try:
+			client[database][collection].remove({'_id': ObjectId(document)})
+			return msg('success', 'Success! Document has been deleted.')
+		except:
+			return msg('error', 'Failed to delete document.')
+
+
+@app.route('/'+config.root_route+'/api/insert', methods=['POST'])
+def insert():
+	if request.method == 'POST':
+		try:
+			database = request.form['database']
+			collection = request.form['collection']
+			document = json.loads(request.form['document'])
+
+			id = str(client[database][collection].insert_one(document).inserted_id)
+
+			if id is not None:
+				return response_msg('success', json.dumps({'msg': 'Success! Document inserted successfully.', 'id': id}))
+			return msg('error', 'A strange error occured.')
+		except:
+			return msg('error', 'Failed to insert document. Is this JSON valid?')
+
+
+@app.route('/'+config.root_route+'/api/get_collections/<database>', methods=['POST'])
+def get_collections(database):
+	if request.method == 'POST':
+		return response_msg('success', json.dumps(client[database].collection_names()))
 
 
 
@@ -75,41 +111,38 @@ def delete(database, collection, document):
 
 
 
-
-
-
-
-@app.route('/admin')
+@app.route('/'+config.root_route)
 def databases():
 	return render_template('template.html', page='select.html', objects=client.database_names(),
-	 breadcrumbs=generate_breadcrumbs(), title='Databases', build_url=build_collections_url)
+	 breadcrumbs=generate_breadcrumbs(), title='Databases', build_url=build_collections_url, databases=client.database_names())
 
 
-@app.route('/admin/<database>')
+@app.route('/'+config.root_route+'/<database>')
 def collections(database):
 	db = client[database]
 	return render_template('template.html', page='select.html', objects=db.collection_names(),
-	 breadcrumbs=generate_breadcrumbs(), title='Collections',  build_url=build_documents_url)
+	 breadcrumbs=generate_breadcrumbs(), title='Collections',  build_url=build_documents_url, databases=client.database_names())
 
 
-@app.route('/admin/<database>/<collection>')
+@app.route('/'+config.root_route+'/<database>/<collection>')
 def documents(database, collection):
 	raw_documents = client[database][collection].find({})
 	documents = []
 	for document in raw_documents:
 		documents.append(document['_id'])
 	return render_template('template.html', page='select.html', objects=documents,
-	 breadcrumbs=generate_breadcrumbs(), title='Documents',  build_url=build_document_url)
+	 breadcrumbs=generate_breadcrumbs(), title='Documents',  build_url=build_document_url, databases=client.database_names())
 
 
-@app.route('/admin/<database>/<collection>/<document>')
+@app.route('/'+config.root_route+'/<database>/<collection>/<document>')
 def document(database, collection, document):
 	document = client[database][collection].find_one({'_id': ObjectId(document)})
 	doc_id = str(document['_id'])
 	del document['_id']
 	return render_template('template.html', page='edit.html', document=json.dumps(document, sort_keys=True, indent=4, ensure_ascii=False), 
-		breadcrumbs=generate_breadcrumbs(), doc_id=doc_id, database=database, collection=collection)
+		breadcrumbs=generate_breadcrumbs(), doc_id=doc_id, database=database, collection=collection, databases=client.database_names())
 
 
-if __name__ == '__main__':
-	app.run(host='0.0.0.0', port=80, debug=True)
+if config.app['blueprint'] is False:
+	if __name__ == '__main__':
+		app.run(host=config.app['host'], port=config.app['port'], debug=config.app['debug'])

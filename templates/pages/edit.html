@@ -3,7 +3,7 @@
   <div class="modal-card">
     <header class="modal-card-head">
       <p class="modal-card-title">Delete Document</p>
-      <button onclick="$(this).click(function() { $('#deleteModal').removeClass('is-active') })" class="delete" aria-label="close"></button>
+      <button onclick="$('#deleteModal').removeClass('is-active')" class="delete" aria-label="close"></button>
     </header>
     <section class="modal-card-body">
       <p class="content">
@@ -11,8 +11,8 @@
       </p>
     </section>
     <footer class="modal-card-foot">
-      <button id="deleteDocument()" class="button is-danger">Delete</button>
-      <button onclick="$(this).click(function() { $('#deleteModal').removeClass('is-active') })" class="button">Cancel</button>
+      <button onclick="deleteDocument()" class="button is-danger">Delete</button>
+      <button onclick="$('#deleteModal').removeClass('is-active')" class="button">Cancel</button>
     </footer>
   </div>
 </div>
@@ -32,7 +32,7 @@
 			</div>
 
 			<div class="column">
-				<a onclick="$(this).click(function() { $('#deleteModal').addClass('is-active') })" class="button is-danger is-outlined is-large is-fullwidth">Delete</a>
+				<a onclick="$('#deleteModal').addClass('is-active')" class="button is-danger is-outlined is-large is-fullwidth">Delete</a>
 			</div>
 		</div>
 
@@ -53,11 +53,8 @@
 
 
 			function saveChanges(){
-				// var content = document.getElementById('content').value;
 				var content = cm.getValue();
 				var j = JSON.parse(content);
-
-				console.log(j);
 
 
 				if(j != null){
@@ -73,14 +70,15 @@
 			}
 
 			function deleteDocument(){
-
-			}
-
-			function showMsg(status, text){
-				$('#noti').remove();
-				var noti = "<div id=\"noti\" class=\"notification is-"+status+"\" style=\"max-width:300px; position:fixed; z-index:9999; top:16px; right:16px;\"> <button class=\"delete\" onclick=\"$(this).click(function() { $('#noti').remove() })\"></button> "+text+"</div>";
-
-				document.getElementsByTagName('body')[0].innerHTML = noti + document.getElementsByTagName('body')[0].innerHTML;
+				$.post( "{{ url_for('delete', database=database, collection=collection, document=doc_id) }}").done(function(data) {
+					var response = JSON.parse(data);
+					if(response.status == 'success'){
+						showMsg('success', response.response)
+						window.location.replace("{{url_for('documents', database=database, collection=collection)}}")
+					} else {
+						showMsg('danger', response.response)
+					}
+				});
 			}
 		</script>
 

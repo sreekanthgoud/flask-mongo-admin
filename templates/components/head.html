@@ -15,29 +15,160 @@
 
 	<body>
 
+
+		<div id="insertModal" class="modal">
+		  <div class="modal-background"></div>
+		  <div class="modal-card">
+		    <header class="modal-card-head">
+		      <p class="modal-card-title">Insert Document</p>
+		      <button onclick="$('#insertModal').removeClass('is-active')" class="delete" aria-label="close"></button>
+		    </header>
+		    <section class="modal-card-body">
+		      
+		      	<div class="field">
+				  <label class="label">Database</label>
+				  <div class="control">
+				    
+				    <input id="db" class="input" oninput="getCollections(this.value)" list="databases" name="database">
+					<datalist id="databases">
+						{% for db in databases %}
+							<option value="{{ db }}">
+						{% endfor %}
+					</datalist>
+
+				  </div>
+				  
+				</div>
+		    	
+
+				<div class="field">
+				  <label class="label">Collection</label>
+				  <div class="control">
+				    
+				    <input id="coll" class="input" list="collections" name="collection">
+					<datalist id="collections"></datalist>
+
+				  </div>
+				  
+				</div>
+
+
+
+				<div class="field">
+				  <label class="label">Document</label>
+				  <div class="control">
+				    <textarea id="doc" class="textarea" placeholder="JSON here..."></textarea>
+				  </div>
+
+				  <script type="text/javascript">
+					cm = CodeMirror.fromTextArea(document.getElementById('doc'), {
+						lineNumbers: true,
+						matchBrackets: true,
+				        autoCloseBrackets: true,
+				        mode: "application/ld+json",
+						lineWrapping: true
+					});
+
+					cm.setOption('theme', 'blackboard');
+
+
+					function getCollections(db){
+						if(db != null && db.length > 0){
+							$.post( "{{ url_for('get_collections', database='') }}"+db).done(function(data) {
+								var response = JSON.parse(data);
+								if(response.status == 'success'){
+									document.getElementById('collections').innerHTML = '';
+									var collections = response.response;
+									for(var i=0; i<collections.length; i++){
+										document.getElementById('collections').innerHTML += '<option value="'+collections[i]+'">';
+									}
+								} else {
+									showMsg('danger', response.response)
+								}
+							});
+						}
+					}
+
+
+					function insertDocument(){
+						var doc = cm.getValue();
+						var j = JSON.parse(doc);
+
+						var database = document.getElementById('db').value;
+						var collection = document.getElementById('coll').value;
+
+
+						if(j != null && database != null && collection != null){
+							$('#insertModal').removeClass('is-active')
+							$.post( "{{ url_for('insert') }}", {"database": database, "collection": collection, "document": doc}).done(function(data) {
+									var response = JSON.parse(data);
+									if(response.status == 'success'){
+										showMsg('success', response.response.msg)
+										window.location.replace("{{ url_for('databases') }}/"+database+'/'+collection+'/'+response.response.id)
+									} else {
+										showMsg('danger', response.response)
+								}
+							});
+						}
+					}
+				  </script>
+				  
+				</div>
+
+
+
+
+
+		    </section>
+		    <footer class="modal-card-foot">
+		      <button onclick="insertDocument()" class="button is-success">Save</button>
+		      <button onclick="$('#insertModal').removeClass('is-active')" class="button">Cancel</button>
+		    </footer>
+		  </div>
+		</div>
+
+
+		<section class="section">
+			<div class="container">
+				<nav class="navbar" role="navigation" aria-label="main navigation">
+				  <div class="navbar-brand">
+				    <a class="navbar-item" href="{{ url_for('databases') }}">
+				      Flask MongoDB Admin
+				    </a>
+				  </div>
+
+				  <div class="navbar-end">
+				    <a href="#" class="navbar-item">Sign Out</a>
+				  </div>
+				</nav>
+			</div>
+		</section>
+
+
 		<div class="container">
+			<div class="columns">
+				<div class="column is-10">
+					<nav class="breadcrumb" aria-label="breadcrumbs">
+					  <ul>
+					  	{% for crumb in breadcrumbs %}
+					  		{% if crumb.is_current %}
+					  			<li class="is-active"><a href="{{ crumb.url }}" aria-current="page">{{ crumb.name }}</a></li>
+					  		{% else %}
+						    	<li><a href="{{ crumb.url }}">{{ crumb.name }}</a></li>
+						    {% endif %}
+						{% endfor %}
+					  </ul>
+					</nav>
+				</div>
 
-			<nav class="navbar" role="navigation" aria-label="main navigation">
-			  <div class="navbar-brand">
-			    <a class="navbar-item" href="{{ url_for('databases') }}">
-			      Flask MongoDB Admin
-			    </a>
-			  </div>
+				<div class="column">
+					<a onclick="$('#insertModal').addClass('is-active')" class="button is-success is-medium is-fullwidth"> 
+						<span class="icon is-small">
+							<i class="fa fa-plus"></i>
+						</span>
+						<span>Document</span>
+					</a>
+				</div>
 
-			  <div class="navbar-end">
-			    <a href="#" class="navbar-item">Sign Out</a>
-			  </div>
-			</nav>
-
-			<nav class="breadcrumb" aria-label="breadcrumbs">
-			  <ul>
-			  	{% for crumb in breadcrumbs %}
-			  		{% if crumb.is_current %}
-			  			<li class="is-active"><a href="{{ crumb.url }}" aria-current="page">{{ crumb.name }}</a></li>
-			  		{% else %}
-				    	<li><a href="{{ crumb.url }}">{{ crumb.name }}</a></li>
-				    {% endif %}
-				{% endfor %}
-			  </ul>
-			</nav>
+			</div>
 		</div>
