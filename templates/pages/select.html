@@ -1,0 +1,28 @@
+<section class="section">
+	
+	<div class="container">
+
+		<nav class="panel">
+		  <p class="panel-heading">
+		    {{ title }}
+		  </p>
+		  <div class="panel-block">
+		    <p class="control has-icons-left">
+		      <input class="input is-small" type="text" placeholder="search">
+		      <span class="icon is-small is-left">
+		        <i class="fa fa-search"></i>
+		      </span>
+		    </p>
+		  </div>
+		  {% for object in objects %}
+			  <a href="{{ build_url(object) }}" class="panel-block">
+			    <span class="panel-icon">
+			      <i class="fa fa-database"></i>
+			    </span>
+			    {{ object }}
+			  </a>
+		   {% endfor %}
+		</nav>
+	</div>
+
+</section>

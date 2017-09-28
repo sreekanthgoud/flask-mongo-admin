@@ -1,0 +1,89 @@
+<div id="deleteModal" class="modal">
+  <div class="modal-background"></div>
+  <div class="modal-card">
+    <header class="modal-card-head">
+      <p class="modal-card-title">Delete Document</p>
+      <button onclick="$(this).click(function() { $('#deleteModal').removeClass('is-active') })" class="delete" aria-label="close"></button>
+    </header>
+    <section class="modal-card-body">
+      <p class="content">
+      Are you sure you wish to delete this document?
+      </p>
+    </section>
+    <footer class="modal-card-foot">
+      <button id="deleteDocument()" class="button is-danger">Delete</button>
+      <button onclick="$(this).click(function() { $('#deleteModal').removeClass('is-active') })" class="button">Cancel</button>
+    </footer>
+  </div>
+</div>
+
+
+
+
+<section class="section">
+	
+	<div class="container">
+
+		<h3 class="subtitle">Editing Document: <strong>{{ doc_id }}</strong></h3>
+
+		<div class="columns">
+			<div class="column">
+				<a onclick="saveChanges()" class="button is-success is-large is-fullwidth">Save Changes</a>
+			</div>
+
+			<div class="column">
+				<a onclick="$(this).click(function() { $('#deleteModal').addClass('is-active') })" class="button is-danger is-outlined is-large is-fullwidth">Delete</a>
+			</div>
+		</div>
+
+		<p class="control">
+			<textarea id="content" class="textarea" placeholder="JSON here..." rows="{{ document.splitlines()|length }}">{{ document }}</textarea>
+		</p>
+
+		<script type="text/javascript">
+			cm = CodeMirror.fromTextArea(document.getElementById('content'), {
+				lineNumbers: true,
+				matchBrackets: true,
+		        autoCloseBrackets: true,
+		        mode: "application/ld+json",
+				lineWrapping: true
+			});
+
+			cm.setSize("100%", "100%");
+
+
+			function saveChanges(){
+				// var content = document.getElementById('content').value;
+				var content = cm.getValue();
+				var j = JSON.parse(content);
+
+				console.log(j);
+
+
+				if(j != null){
+					$.post( "{{ url_for('update', database=database, collection=collection, document=doc_id) }}", {"content": content}).done(function(data) {
+						var response = JSON.parse(data);
+						if(response.status == 'success'){
+							showMsg('success', response.response)
+						} else {
+							showMsg('danger', response.response)
+						}
+					});
+				}
+			}
+
+			function deleteDocument(){
+
+			}
+
+			function showMsg(status, text){
+				$('#noti').remove();
+				var noti = "<div id=\"noti\" class=\"notification is-"+status+"\" style=\"max-width:300px; position:fixed; z-index:9999; top:16px; right:16px;\"> <button class=\"delete\" onclick=\"$(this).click(function() { $('#noti').remove() })\"></button> "+text+"</div>";
+
+				document.getElementsByTagName('body')[0].innerHTML = noti + document.getElementsByTagName('body')[0].innerHTML;
+			}
+		</script>
+
+	</div>
+
+</section>

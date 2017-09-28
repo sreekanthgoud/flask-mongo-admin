@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Flask MongoDB Admin</title>
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/fontawesome.css') }}">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/bulma.css') }}">
+
+		<script src="{{ url_for('static', filename='codemirror/lib/codemirror.js') }}"></script>
+		<link rel="stylesheet" href="{{ url_for('static', filename='codemirror/lib/codemirror.css') }}">
+		<script src="{{ url_for('static', filename='codemirror/mode/javascript/javascript.js') }}"></script>
+
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+	</head>
+
+
+	<body>
+
+		<div class="container">
+
+			<nav class="navbar" role="navigation" aria-label="main navigation">
+			  <div class="navbar-brand">
+			    <a class="navbar-item" href="{{ url_for('databases') }}">
+			      Flask MongoDB Admin
+			    </a>
+			  </div>
+
+			  <div class="navbar-end">
+			    <a href="#" class="navbar-item">Sign Out</a>
+			  </div>
+			</nav>
+
+			<nav class="breadcrumb" aria-label="breadcrumbs">
+			  <ul>
+			  	{% for crumb in breadcrumbs %}
+			  		{% if crumb.is_current %}
+			  			<li class="is-active"><a href="{{ crumb.url }}" aria-current="page">{{ crumb.name }}</a></li>
+			  		{% else %}
+				    	<li><a href="{{ crumb.url }}">{{ crumb.name }}</a></li>
+				    {% endif %}
+				{% endfor %}
+			  </ul>
+			</nav>
+		</div>
