@@ -9,7 +9,10 @@ if config.app['blueprint']:
 else:
 	app = Flask(__name__, static_url_path='')
 
-client = MongoClient()
+if config.mongodb['url'] is None:
+	client = MongoClient(config.mongodb['host'], config.mongodb['port'])
+else:
+	client = MongoClient(config.mongodb['url'])
 
 
 def generate_breadcrumbs():
