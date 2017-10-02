@@ -3,11 +3,15 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 import json
 import config
+import os
+
+URL_PREFIX = ''
 
 if config.app['blueprint']:
-	app = Blueprint(config.root_route, __name__)
+	admin = Blueprint(config.root_route, __name__, template_folder='./templates', static_folder='./static')
+	URL_PREFIX = 'admin.'
 else:
-	app = Flask(__name__, static_url_path='')
+	admin = Flask(__name__, static_url_path='')
 
 if config.mongodb['url'] is None:
 	client = MongoClient(config.mongodb['host'], config.mongodb['port'])
@@ -17,7 +21,7 @@ else:
 
 def generate_breadcrumbs():
 	breadcrumbs = []
-	p = request.path.replace(url_for('databases'),"", 1)
+	p = request.path.replace(url_for(URL_PREFIX+'databases'),"", 1)
 	parts = p.split('/')
 	for part in parts:
 		breadcrumbs.append({
@@ -30,17 +34,17 @@ def generate_breadcrumbs():
 
 
 def build_collections_url(database):
-	return url_for('collections', database=database)
+	return url_for(URL_PREFIX+'collections', database=database)
 
 
 def build_documents_url(collection):
-	return url_for('documents', database=request.path.replace(url_for('databases')+'/',"", 1),
+	return url_for(URL_PREFIX+'documents', database=request.path.replace(url_for(URL_PREFIX+'databases')+'/',"", 1),
 		collection=collection)
 
 
 def build_document_url(document):
-	parts = request.path.replace(url_for('databases')+'/',"", 1).split('/')
-	return url_for('document', database=parts[0],
+	parts = request.path.replace(url_for(URL_PREFIX+'databases')+'/',"", 1).split('/')
+	return url_for(URL_PREFIX+'document', database=parts[0],
 		collection=parts[1], document=document)
 
 
@@ -63,7 +67,7 @@ def response_msg(status, response):
 
 
 
-@app.route('/'+config.root_route+'/api/update/<database>/<collection>/<document>', methods=['POST'])
+@admin.route('/'+config.root_route+'/api/update/<database>/<collection>/<document>', methods=['POST'])
 def update(database, collection, document):
 	if request.method == 'POST':
 		try:
@@ -76,7 +80,7 @@ def update(database, collection, document):
 
 
 
-@app.route('/'+config.root_route+'/api/delete/<database>/<collection>/<document>', methods=['POST'])
+@admin.route('/'+config.root_route+'/api/delete/<database>/<collection>/<document>', methods=['POST'])
 def delete(database, collection, document):
 	if request.method == 'POST':
 		try:
@@ -86,7 +90,7 @@ def delete(database, collection, document):
 			return msg('error', 'Failed to delete document.')
 
 
-@app.route('/'+config.root_route+'/api/insert', methods=['POST'])
+@admin.route('/'+config.root_route+'/api/insert', methods=['POST'])
 def insert():
 	if request.method == 'POST':
 		try:
@@ -103,7 +107,7 @@ def insert():
 			return msg('error', 'Failed to insert document. Is this JSON valid?')
 
 
-@app.route('/'+config.root_route+'/api/get_collections/<database>', methods=['POST'])
+@admin.route('/'+config.root_route+'/api/get_collections/<database>', methods=['POST'])
 def get_collections(database):
 	if request.method == 'POST':
 		return response_msg('success', json.dumps(client[database].collection_names()))
@@ -114,20 +118,20 @@ def get_collections(database):
 
 
 
-@app.route('/'+config.root_route)
+@admin.route('/'+config.root_route)
 def databases():
 	return render_template('template.html', page='select.html', objects=client.database_names(),
 	 breadcrumbs=generate_breadcrumbs(), title='Databases', build_url=build_collections_url, databases=client.database_names())
 
 
-@app.route('/'+config.root_route+'/<database>')
+@admin.route('/'+config.root_route+'/<database>')
 def collections(database):
 	db = client[database]
 	return render_template('template.html', page='select.html', objects=db.collection_names(),
 	 breadcrumbs=generate_breadcrumbs(), title='Collections',  build_url=build_documents_url, databases=client.database_names())
 
 
-@app.route('/'+config.root_route+'/<database>/<collection>')
+@admin.route('/'+config.root_route+'/<database>/<collection>')
 def documents(database, collection):
 	raw_documents = client[database][collection].find({})
 	documents = []
@@ -137,13 +141,18 @@ def documents(database, collection):
 	 breadcrumbs=generate_breadcrumbs(), title='Documents',  build_url=build_document_url, databases=client.database_names())
 
 
-@app.route('/'+config.root_route+'/<database>/<collection>/<document>')
+@admin.route('/'+config.root_route+'/<database>/<collection>/<document>')
 def document(database, collection, document):
 	document = client[database][collection].find_one({'_id': ObjectId(document)})
 	doc_id = str(document['_id'])
 	del document['_id']
 	return render_template('template.html', page='edit.html', document=json.dumps(document, sort_keys=True, indent=4, ensure_ascii=False), 
 		breadcrumbs=generate_breadcrumbs(), doc_id=doc_id, database=database, collection=collection, databases=client.database_names())
+
+
+@admin.context_processor
+def inject_context():
+    return dict(url_prefix=URL_PREFIX)
 
 
 if config.app['blueprint'] is False:

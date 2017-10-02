@@ -58,7 +58,7 @@
 
 
 				if(j != null){
-					$.post( "{{ url_for('update', database=database, collection=collection, document=doc_id) }}", {"content": content}).done(function(data) {
+					$.post( "{{ url_for(url_prefix+'update', database=database, collection=collection, document=doc_id) }}", {"content": content}).done(function(data) {
 						var response = JSON.parse(data);
 						if(response.status == 'success'){
 							showMsg('success', response.response)
@@ -70,11 +70,11 @@
 			}
 
 			function deleteDocument(){
-				$.post( "{{ url_for('delete', database=database, collection=collection, document=doc_id) }}").done(function(data) {
+				$.post( "{{ url_for(url_prefix+'delete', database=database, collection=collection, document=doc_id) }}").done(function(data) {
 					var response = JSON.parse(data);
 					if(response.status == 'success'){
 						showMsg('success', response.response)
-						window.location.replace("{{url_for('documents', database=database, collection=collection)}}")
+						window.location.replace("{{url_for(url_prefix+'documents', database=database, collection=collection)}}")
 					} else {
 						showMsg('danger', response.response)
 					}
