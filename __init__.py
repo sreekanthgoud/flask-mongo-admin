@@ -157,4 +157,4 @@ def inject_context():
 
 if config.app['blueprint'] is False:
 	if __name__ == '__main__':
-		app.run(host=config.app['host'], port=config.app['port'], debug=config.app['debug'])
+		admin.run(host=config.app['host'], port=config.app['port'], debug=config.app['debug'])
