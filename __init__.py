@@ -1,6 +1,7 @@
 from flask import Flask, render_template, url_for, request, Blueprint
 from pymongo import MongoClient
 from bson.objectid import ObjectId
+from bson import json_util
 import json
 import config
 import os
@@ -146,7 +147,7 @@ def document(database, collection, document):
 	document = client[database][collection].find_one({'_id': ObjectId(document)})
 	doc_id = str(document['_id'])
 	del document['_id']
-	return render_template('template.html', page='edit.html', document=json.dumps(document, sort_keys=True, indent=4, ensure_ascii=False), 
+	return render_template('template.html', page='edit.html', document=json.dumps(document, default=json_util.default, sort_keys=True, indent=4, ensure_ascii=False), 
 		breadcrumbs=generate_breadcrumbs(), doc_id=doc_id, database=database, collection=collection, databases=client.database_names())
 
 
